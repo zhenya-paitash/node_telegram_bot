@@ -1,42 +1,14 @@
 import { START, HELP, GAME } from './commands.js'
+import { gameBtn, gameAgainBtn } from './button.js'
 
-const chats = {}
-
-const gameBtn = {
-  reply_markup: JSON.stringify({
-    inline_keyboard: [
-      [
-        { text: '1', callback_data: '1' },
-        { text: '2', callback_data: '2' },
-        { text: '3', callback_data: '3' },
-      ],
-      [
-        { text: '4', callback_data: '4' },
-        { text: '5', callback_data: '5' },
-        { text: '6', callback_data: '6' },
-      ],
-      [
-        { text: '7', callback_data: '7' },
-        { text: '8', callback_data: '8' },
-        { text: '9', callback_data: '9' },
-      ],
-      [{ text: '0', callback_data: '0' }],
-    ],
-  }),
-}
-
-const againBtn = {
-  reply_markup: JSON.stringify({
-    inline_keyboard: [[{ text: 'Play again?', callback_data: '/again' }]],
-  }),
-}
-
-const startGame = async (bot, chatId) => {
-  chats[chatId] = Math.floor(Math.random() * 10)
-  await bot.sendMessage(chatId, 'Угадай число от 0 до 9', gameBtn)
-}
+const localDB = {}
 
 export default function (bot) {
+  const startGame = async chatId => {
+    localDB[chatId] = Math.floor(Math.random() * 10)
+    await bot.sendMessage(chatId, 'Угадай число от 0 до 9', gameBtn)
+  }
+
   // on MESSAGE
   bot.on('message', async ({ text, chat }) => {
     const chatId = chat.id
@@ -51,7 +23,7 @@ export default function (bot) {
       case HELP:
         return await bot.sendMessage(chatId, 'this is help')
       case GAME:
-        return startGame(bot, chatId)
+        return startGame(chatId)
       default:
         return await bot.sendMessage(chatId, 'Check my commands pls')
     }
@@ -61,19 +33,19 @@ export default function (bot) {
   bot.on('callback_query', async ({ data, message }) => {
     const chatId = message.chat.id
 
-    if (data === '/again') return startGame(bot, chatId)
+    if (data === '/again') return startGame(chatId)
 
-    if (+data === +chats[chatId])
+    if (+data === +localDB[chatId])
       return await bot.sendMessage(
         chatId,
-        `Поздравляю! Ты отгадал, это было число ${chats[chatId]}`,
-        againBtn
+        `Поздравляю! Ты отгадал, это было число ${localDB[chatId]}`,
+        gameAgainBtn
       )
 
     return await bot.sendMessage(
       chatId,
-      `К сожалению ты не отгадал. Это было число ${chats[chatId]}`,
-      againBtn
+      `К сожалению ты не отгадал. Это было число ${localDB[chatId]}`,
+      gameAgainBtn
     )
   })
 }
